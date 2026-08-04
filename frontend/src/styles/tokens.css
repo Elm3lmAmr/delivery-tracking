@@ -1,0 +1,39 @@
+/* Design tokens - navy palette per Edara brand */
+
+[data-theme="dark"] {
+  --bg: #0A1628;
+  --surface: #0B1F3A;
+  --surface-2: #142B4F;
+  --surface-3: #1A2F4E;
+  --border: #1F3557;
+  --border-2: #24406B;
+  --text: #E6ECF5;
+  --text-2: #B5C1D6;
+  --muted: #8A9BB8;
+  --accent: #4DA3FF;
+  --accent-2: #6BB6FF;
+  --accent-ink: #0A1628;
+  --ok: #2ECC71;
+  --warn: #F4B942;
+  --crit: #E74C3C;
+  --overlay: rgba(10, 22, 40, 0.85);
+}
+
+[data-theme="light"] {
+  --bg: #F4F6FA;
+  --surface: #FFFFFF;
+  --surface-2: #F8FAFC;
+  --surface-3: #EFF3F9;
+  --border: #E1E7F0;
+  --border-2: #CDD6E4;
+  --text: #0A1628;
+  --text-2: #2A3B57;
+  --muted: #6B7A8F;
+  --accent: #2E7DD1;
+  --accent-2: #4DA3FF;
+  --accent-ink: #FFFFFF;
+  --ok: #16A661;
+  --warn: #D4941A;
+  --crit: #C93D2E;
+  --overlay: rgba(255, 255, 255, 0.9);
+}

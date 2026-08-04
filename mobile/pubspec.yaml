@@ -1,0 +1,51 @@
+name: edara_delivery
+description: Edara Delivery Tracking - driver and guard mobile app
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # Networking
+  dio: ^5.4.3+1
+
+  # State & routing
+  flutter_bloc: ^8.1.5
+  equatable: ^2.0.5
+  go_router: ^13.2.4
+
+  # Local storage
+  shared_preferences: ^2.2.3
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Camera / images / QR
+  camera: ^0.10.5+9
+  image_picker: ^1.0.7
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.0.1
+
+  # Location & Maps
+  geolocator: ^11.0.0
+  google_maps_flutter: ^2.5.3
+
+  # Push notifications
+  firebase_core: ^2.30.0
+  firebase_messaging: ^14.9.0
+  firebase_auth: ^4.19.0
+
+  # UI helpers
+  intl: ^0.19.0
+  jwt_decoder: ^2.0.1
+
+dev_dependencies:
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

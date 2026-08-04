@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "879649532829",
+    "project_id": "delivery-app-79bf7",
+    "storage_bucket": "delivery-app-79bf7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:879649532829:android:bb298b68df050ba15add74",
+        "android_client_info": {
+          "package_name": "com.example.edara_delivery"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFSCeZQ6V8nQ6NQGkrGL44YFCuwBljqgc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

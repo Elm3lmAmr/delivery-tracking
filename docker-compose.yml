@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: edara-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: edara_delivery
+      MYSQL_USER: edara
+      MYSQL_PASSWORD: edara_dev_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: edara-backend
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: edara
+      DB_PASSWORD: edara_dev_password
+      DB_NAME: edara_delivery
+      JWT_SECRET: replace_me_with_openssl_rand_hex_32
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+volumes:
+  mysql_data:
