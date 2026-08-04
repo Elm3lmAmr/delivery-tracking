@@ -91,7 +91,8 @@ async function lookupByToken(req, res, next) {
     );
     if (rows.length === 0) throw new AppError('QR not found', 404);
     const d = rows[0];
-    if (d.status !== 'pending') throw new AppError('QR already used or expired', 400);
+    if (d.status !== 'pending' && d.status !== 'active') throw new AppError('QR already used or expired', 400);
+    const mode = d.status === 'pending' ? 'entry' : 'exit';
     if (new Date(d.qr_expires_at) < new Date()) {
       await query('UPDATE deliveries SET status = "expired" WHERE id = ?', [d.id]);
       throw new AppError('QR expired', 400);
@@ -99,6 +100,7 @@ async function lookupByToken(req, res, next) {
     if (d.driver_status !== 'verified') throw new AppError('Driver not verified', 403);
     res.json({
       deliveryId: d.id,
+      mode,
       driver: {
         id: d.driver_id, fullName: d.full_name, phone: d.phone,
         plateNumber: d.plate_number, selfiePath: d.selfie_path
@@ -163,6 +165,71 @@ async function rejectEntry(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// ---------- Guard confirms exit ----------
+async function confirmExit(req, res, next) {
+  try {
+    const deliveryId = parseInt(req.params.id, 10);
+    const gateId = req.auth.gateId;
+    if (!gateId) throw new AppError('Your account is not assigned to a gate', 403);
+    
+    let duration = 0;
+    
+    await transaction(async (conn) => {
+      const [rows] = await conn.execute('SELECT status, entered_at FROM deliveries WHERE id = ? FOR UPDATE', [deliveryId]);
+      if (rows.length === 0) throw new AppError('Delivery not found', 404);
+      if (rows[0].status !== 'active') throw new AppError('Delivery not in active state', 400);
+      
+      const enteredAt = rows[0].entered_at;
+      const now = new Date();
+      duration = Math.floor((now.getTime() - new Date(enteredAt).getTime()) / 1000);
+      
+      await conn.execute(
+        `UPDATE deliveries SET status = 'completed', completed_at = NOW(), duration_seconds = ? WHERE id = ?`,
+        [duration, deliveryId]
+      );
+      
+      await conn.execute(
+        `INSERT INTO audit_log (actor_type, actor_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)`,
+        ['user', req.auth.id, 'scanned_exit', 'delivery', deliveryId, JSON.stringify({ gateId, duration })]
+      );
+    });
+
+    const io = req.app.get('io');
+    if (io) io.to('admin').emit('delivery:completed', { deliveryId, gateId, duration });
+
+    res.json({ ok: true, duration });
+  } catch (err) { next(err); }
+}
+
+// ---------- Driver fetches history ----------
+async function getDriverHistory(req, res, next) {
+  try {
+    const driverId = req.auth.id;
+    const rows = await query(
+      `SELECT d.id, d.status, d.created_at, d.duration_seconds, d.unit_number_raw,
+              p.name_en AS project_name, u.unit_number
+       FROM deliveries d
+       JOIN projects p ON p.id = d.project_id
+       LEFT JOIN units u ON u.id = d.unit_id
+       WHERE d.driver_id = ? AND d.status IN ('completed', 'rejected', 'expired')
+       ORDER BY d.created_at DESC
+       LIMIT 50`,
+      [driverId]
+    );
+    
+    const history = rows.map(r => ({
+      id: r.id,
+      status: r.status,
+      date: r.created_at,
+      durationSeconds: r.duration_seconds,
+      project: r.project_name,
+      unit: r.unit_number || r.unit_number_raw
+    }));
+
+    res.json(history);
+  } catch (err) { next(err); }
+}
+
 // ---------- Driver posts location ping ----------
 async function postPing(req, res, next) {
   try {
@@ -202,4 +269,4 @@ async function postPing(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { createDelivery, lookupByToken, confirmEntry, rejectEntry, postPing };
+module.exports = { createDelivery, lookupByToken, confirmEntry, rejectEntry, postPing, confirmExit, getDriverHistory };

@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../data/data_sources/delivery_remote_data_source.dart';
 import '../../../../../config/theme.dart';
+import 'package:intl/intl.dart';
+import '../../../data/repositories_impl/delivery_repository_impl.dart';
 
 import '../../../../../core/api/server_config_dialog.dart';
 
@@ -17,11 +19,26 @@ class DriverHomeScreen extends StatefulWidget {
 class _DriverHomeScreenState extends State<DriverHomeScreen> {
   int _selectedIndex = 0;
   String _driverName = 'Driver';
+  List<dynamic> _history = [];
+  bool _isLoadingHistory = true;
 
   @override
   void initState() {
     super.initState();
     _loadDriverName();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    try {
+      final apiClient = ApiClient();
+      await apiClient.loadToken();
+      final repo = DeliveryRepositoryImpl(remoteDataSource: DeliveryRemoteDataSource(apiClient));
+      final h = await repo.fetchDeliveryHistory();
+      if (mounted) setState(() { _history = h; _isLoadingHistory = false; });
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingHistory = false);
+    }
   }
 
   Future<void> _loadDriverName() async {
@@ -168,9 +185,18 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               style: TextStyle(color: kMuted, fontSize: 11, letterSpacing: 1.4, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
-            _RecentItem(project: 'Eastown', unit: 'B-891', duration: '8m 42s'),
-            _RecentItem(project: 'Villette', unit: 'VT-1204', duration: '11m 15s'),
-            _RecentItem(project: 'Allegria', unit: 'AL-VL-442', duration: '14m 03s'),
+            if (_isLoadingHistory) 
+              const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+            else if (_history.isEmpty)
+              const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No deliveries yet.', style: TextStyle(color: kMuted))))
+            else
+              ..._history.map((h) => _RecentItem(
+                project: h['project'] ?? 'Unknown', 
+                unit: h['unit'] ?? 'Unknown', 
+                durationSeconds: h['durationSeconds'],
+                dateStr: h['date'],
+                status: h['status'] ?? 'completed'
+              )).toList(),
           ],
         ),
       );
@@ -180,11 +206,28 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 class _RecentItem extends StatelessWidget {
   final String project;
   final String unit;
-  final String duration;
-  const _RecentItem({required this.project, required this.unit, required this.duration});
+  final int? durationSeconds;
+  final String? dateStr;
+  final String status;
+  const _RecentItem({required this.project, required this.unit, this.durationSeconds, this.dateStr, required this.status});
 
   @override
   Widget build(BuildContext context) {
+    String formattedDate = 'Unknown Date';
+    if (dateStr != null) {
+      final d = DateTime.tryParse(dateStr!)?.toLocal();
+      if (d != null) formattedDate = DateFormat('MMM d, yyyy · h:mm a').format(d);
+    }
+    
+    String formattedDuration = '--';
+    if (durationSeconds != null && durationSeconds! > 0) {
+      final m = durationSeconds! ~/ 60;
+      final s = durationSeconds! % 60;
+      formattedDuration = m > 0 ? '${m}m ${s}s' : '${s}s';
+    }
+
+    final isCompleted = status.toLowerCase() == 'completed';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
@@ -196,11 +239,11 @@ class _RecentItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('$project · $unit', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              Text('Yesterday · $duration', style: const TextStyle(color: kMuted, fontSize: 11)),
+              Text('$formattedDate · $formattedDuration', style: const TextStyle(color: kMuted, fontSize: 11)),
             ],
           ),
-          const Text('COMPLETED',
-            style: TextStyle(color: kOk, fontSize: 10, letterSpacing: 0.8, fontWeight: FontWeight.w700),
+          Text(status.toUpperCase(),
+            style: TextStyle(color: isCompleted ? kOk : kWarn, fontSize: 10, letterSpacing: 0.8, fontWeight: FontWeight.w700),
           ),
         ],
       ),

@@ -20,4 +20,10 @@ router.post('/:id/confirm-entry', verifyToken, requireRole('guard'), controller.
 // Guard rejects entry
 router.post('/:id/reject', verifyToken, requireRole('guard'), controller.rejectEntry);
 
+// Guard confirms exit
+router.post('/:id/confirm-exit', verifyToken, requireRole('guard'), controller.confirmExit);
+
+// Driver fetches history
+router.get('/history', verifyToken, requireDriver, controller.getDriverHistory);
+
 module.exports = router;

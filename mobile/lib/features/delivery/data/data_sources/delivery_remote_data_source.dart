@@ -59,4 +59,13 @@ class DeliveryRemoteDataSource {
   Future<void> rejectEntry(int deliveryId, String reason) async {
     await client.dio.post('/deliveries/$deliveryId/reject', data: {'reason': reason});
   }
+
+  Future<void> confirmExit(int deliveryId) async {
+    await client.dio.post('/deliveries/$deliveryId/confirm-exit');
+  }
+
+  Future<List<dynamic>> fetchDeliveryHistory() async {
+    final res = await client.dio.get('/deliveries/history');
+    return res.data;
+  }
 }

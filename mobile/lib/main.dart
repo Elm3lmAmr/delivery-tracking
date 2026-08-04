@@ -24,7 +24,7 @@ void main() async {
   
   // Initialize Push Notifications
   final pushService = PushNotificationService(apiClient);
-  await pushService.initialize();
+  pushService.initialize().catchError((e) => debugPrint('Push init error: $e'));
 
   // We remove the await here. SplashScreen will load the token.
   // This ensures runApp is called immediately and the screen doesn't stay black.

@@ -19,4 +19,6 @@ abstract class DeliveryRepository {
   Future<Map<String, dynamic>> lookupQr(String qrToken);
   Future<void> confirmEntry(int deliveryId);
   Future<void> rejectEntry(int deliveryId, String reason);
+  Future<void> confirmExit(int deliveryId);
+  Future<List<dynamic>> fetchDeliveryHistory();
 }

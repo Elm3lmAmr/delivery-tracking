@@ -24,9 +24,18 @@ class _GuardVerifyScreenState extends State<GuardVerifyScreen> {
       final apiClient = ApiClient();
       await apiClient.loadToken();
       final repo = DeliveryRepositoryImpl(remoteDataSource: DeliveryRemoteDataSource(apiClient));
-      await repo.confirmEntry(widget.deliveryData['deliveryId']);
+      final isExit = widget.deliveryData['mode'] == 'exit';
+      
+      if (isExit) {
+        await repo.confirmExit(widget.deliveryData['deliveryId']);
+      } else {
+        await repo.confirmEntry(widget.deliveryData['deliveryId']);
+      }
+      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delivery confirmed! Tracking started.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(isExit ? 'Delivery checked out successfully.' : 'Delivery confirmed! Tracking started.')
+        ));
         context.go('/guard/scanner');
       }
     } catch (e) {
@@ -76,8 +85,10 @@ class _GuardVerifyScreenState extends State<GuardVerifyScreen> {
     final plateNumber = driverData?['plateNumber'] ?? 'Unknown Plate';
     final destination = '${destinationData?['projectName'] ?? 'Unknown Project'} · ${destinationData?['unitNumber'] ?? 'Unknown Unit'}';
 
+    final isExit = data['mode'] == 'exit';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify entry')),
+      appBar: AppBar(title: Text(isExit ? 'Verify exit' : 'Verify entry')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -110,8 +121,8 @@ class _GuardVerifyScreenState extends State<GuardVerifyScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text('GOING TO',
-                    style: TextStyle(color: kMuted, fontSize: 10, letterSpacing: 1.4, fontWeight: FontWeight.w600),
+                  Text(isExit ? 'CAME FROM' : 'GOING TO',
+                    style: const TextStyle(color: kMuted, fontSize: 10, letterSpacing: 1.4, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 6),
                   Text(destination,
@@ -128,7 +139,7 @@ class _GuardVerifyScreenState extends State<GuardVerifyScreen> {
                 style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
                 child: _isLoading 
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Let in & start tracking'),
+                  : Text(isExit ? 'Confirm Exit & Stop Tracking' : 'Let in & start tracking'),
               ),
             ),
             const SizedBox(height: 8),
@@ -141,7 +152,7 @@ class _GuardVerifyScreenState extends State<GuardVerifyScreen> {
                   side: const BorderSide(color: kBorder),
                   foregroundColor: kText,
                 ),
-                child: const Text('Reject entry'),
+                child: Text(isExit ? 'Reject exit' : 'Reject entry'),
               ),
             ),
           ],

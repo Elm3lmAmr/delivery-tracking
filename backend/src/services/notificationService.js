@@ -6,9 +6,11 @@ const admin = require('firebase-admin');
 // You need to set GOOGLE_APPLICATION_CREDENTIALS in your environment,
 // or initialize it explicitly here with a service account file.
 try {
-  if (!admin.apps.length) {
+  if (admin.apps && admin.apps.length === 0) {
     admin.initializeApp(); // Assuming GOOGLE_APPLICATION_CREDENTIALS is set
     console.log('Firebase Admin SDK initialized successfully');
+  } else if (!admin.apps) {
+    console.warn('Firebase admin.apps is undefined. Check firebase-admin version.');
   }
 } catch (error) {
   console.error('Failed to initialize Firebase Admin SDK:', error);

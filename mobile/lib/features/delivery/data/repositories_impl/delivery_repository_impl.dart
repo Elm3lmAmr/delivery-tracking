@@ -53,4 +53,14 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
   Future<void> rejectEntry(int deliveryId, String reason) async {
     await remoteDataSource.rejectEntry(deliveryId, reason);
   }
+
+  @override
+  Future<void> confirmExit(int deliveryId) async {
+    await remoteDataSource.confirmExit(deliveryId);
+  }
+
+  @override
+  Future<List<dynamic>> fetchDeliveryHistory() async {
+    return await remoteDataSource.fetchDeliveryHistory();
+  }
 }
