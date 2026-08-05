@@ -46,13 +46,24 @@ class _GuardScannerScreenState extends State<GuardScannerScreen> {
       await apiClient.loadToken();
       final repo = DeliveryRepositoryImpl(remoteDataSource: DeliveryRemoteDataSource(apiClient));
       final data = await repo.lookupQr(code);
+      
+      final mode = data['mode']; // 'entry' or 'exit'
+      if (_selectedIndex == 0 && mode != 'entry') {
+        throw Exception('This QR is for Exit. Please use the "Scan Out" tab.');
+      }
+      if (_selectedIndex == 1 && mode != 'exit') {
+        throw Exception('This QR is for Entry. Please use the "Scan In" tab.');
+      }
+
       if (mounted) {
         context.push('/guard/verify', extra: data);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invalid QR or error: $e')));
-        setState(() => _handled = false); // reset so they can try again
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) setState(() => _handled = false);
+        });
       }
     }
   }
@@ -61,7 +72,7 @@ class _GuardScannerScreenState extends State<GuardScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedIndex == 0 ? 'Gate A · Scanner' : 'Profile'),
+        title: Text(_selectedIndex == 0 ? 'Gate A · Scan In' : _selectedIndex == 1 ? 'Gate A · Scan Out' : 'Profile'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_input_antenna),
@@ -70,7 +81,7 @@ class _GuardScannerScreenState extends State<GuardScannerScreen> {
           ),
         ],
       ),
-      body: _selectedIndex == 0 ? _buildScannerTab() : _buildProfileTab(),
+      body: (_selectedIndex == 0 || _selectedIndex == 1) ? _buildScannerTab() : _buildProfileTab(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
@@ -78,7 +89,8 @@ class _GuardScannerScreenState extends State<GuardScannerScreen> {
         selectedItemColor: kAccent,
         unselectedItemColor: kMuted,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: 'Scanner'),
+          BottomNavigationBarItem(icon: Icon(Icons.login), label: 'Scan In'),
+          BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Scan Out'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
@@ -120,7 +132,7 @@ class _GuardScannerScreenState extends State<GuardScannerScreen> {
             child: Container(
               width: 260, height: 260,
               decoration: BoxDecoration(
-                border: Border.all(color: kAccent, width: 3),
+                border: Border.all(color: _selectedIndex == 0 ? kOk : kWarn, width: 3),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),

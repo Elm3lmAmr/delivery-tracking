@@ -37,7 +37,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       final h = await repo.fetchDeliveryHistory();
       if (mounted) setState(() { _history = h; _isLoadingHistory = false; });
     } catch (e) {
-      if (mounted) setState(() => _isLoadingHistory = false);
+      debugPrint('Error fetching history: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load history: $e')));
+        setState(() => _isLoadingHistory = false);
+      }
     }
   }
 
