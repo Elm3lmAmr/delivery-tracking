@@ -161,7 +161,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             ),
             const SizedBox(height: 24),
             GestureDetector(
-              onTap: () => context.push('/driver/new'),
+              onTap: () async {
+                await context.push('/driver/new');
+                _loadHistory(); // refresh after returning
+              },
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -193,8 +196,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             const SizedBox(height: 24),
             if (_activeDelivery != null) ...[
               GestureDetector(
-                onTap: () {
-                  context.push('/driver/new/qr', extra: {
+                onTap: () async {
+                  await context.push('/driver/qr', extra: {
                     'qrPayload': _activeDelivery!['qrPayload'],
                     'project': _activeDelivery!['project'],
                     'unit': _activeDelivery!['unit'],

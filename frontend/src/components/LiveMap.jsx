@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 // Fix for default marker icons in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -18,23 +18,35 @@ const truckIcon = new L.Icon({
   popupAnchor: [0, -32],
 });
 
-// A component to automatically fit bounds if needed
-function MapBounds({ deliveries }) {
+// A component to automatically fit bounds if needed or pan to a selected delivery
+function MapBounds({ deliveries, selectedDeliveryId }) {
   const map = useMap();
   useEffect(() => {
-    if (deliveries.length > 0) {
+    if (selectedDeliveryId) {
+      const selected = deliveries.find(d => d.id === selectedDeliveryId);
+      if (selected && selected.lat && selected.lng) {
+        map.flyTo([selected.lat, selected.lng], 16, { duration: 1.5 });
+      }
+    } else if (deliveries.length > 0) {
       const bounds = L.latLngBounds(deliveries.map(d => [d.lat, d.lng]));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
     }
-  }, [deliveries, map]);
+  }, [deliveries, map, selectedDeliveryId]);
   return null;
 }
 
-export default function LiveMap({ deliveries }) {
+export default function LiveMap({ deliveries, selectedDeliveryId }) {
   // Default center if no deliveries (Eastown, New Cairo)
   const defaultCenter = [30.0089, 31.4959];
+  const markerRefs = useRef({});
   
   const activeMarkers = deliveries.filter(d => d.lat && d.lng);
+
+  useEffect(() => {
+    if (selectedDeliveryId && markerRefs.current[selectedDeliveryId]) {
+      markerRefs.current[selectedDeliveryId].openPopup();
+    }
+  }, [selectedDeliveryId]);
 
   return (
     <div style={{ height: '100%', width: '100%', minHeight: '400px', background: '#e5e5e5' }}>
@@ -49,7 +61,14 @@ export default function LiveMap({ deliveries }) {
         />
         
         {activeMarkers.map((d) => (
-          <Marker key={d.id} position={[d.lat, d.lng]} icon={truckIcon}>
+          <Marker 
+            key={d.id} 
+            position={[d.lat, d.lng]} 
+            icon={truckIcon}
+            ref={(ref) => {
+              if (ref) markerRefs.current[d.id] = ref;
+            }}
+          >
             <Popup>
               <div style={{ padding: '4px' }}>
                 <strong style={{ display: 'block', marginBottom: '4px' }}>{d.driver}</strong>
@@ -63,7 +82,7 @@ export default function LiveMap({ deliveries }) {
           </Marker>
         ))}
 
-        <MapBounds deliveries={activeMarkers} />
+        <MapBounds deliveries={activeMarkers} selectedDeliveryId={selectedDeliveryId} />
       </MapContainer>
     </div>
   );
