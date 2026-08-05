@@ -16,10 +16,18 @@ function normalizePhone(phone) {
   return phone.replace(/\s+/g, '');
 }
 
+// ---------- Get all gates ----------
+async function getGates(req, res, next) {
+  try {
+    const rows = await query('SELECT id, name FROM gates ORDER BY id');
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
 // ---------- Backend user login ----------
 async function userLogin(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const { email, password, gateId } = req.body;
     if (!email || !password) throw new AppError('Email and password required');
     const rows = await query(
       'SELECT id, email, password_hash, full_name, role, assigned_gate_id, active FROM users WHERE email = ?',
@@ -31,18 +39,21 @@ async function userLogin(req, res, next) {
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) throw new AppError('Invalid credentials', 401);
     await query('UPDATE users SET last_login_at = NOW() WHERE id = ?', [user.id]);
+    
+    const finalGateId = gateId ? parseInt(gateId, 10) : user.assigned_gate_id;
+    
     const token = issueToken({
       id: user.id,
       email: user.email,
       role: user.role,
-      gateId: user.assigned_gate_id,
+      gateId: finalGateId,
       type: 'user'
     });
     res.json({
       token,
       user: {
         id: user.id, email: user.email, fullName: user.full_name,
-        role: user.role, assignedGateId: user.assigned_gate_id
+        role: user.role, gateId: finalGateId
       }
     });
   } catch (err) { next(err); }
@@ -161,4 +172,6 @@ async function verifyOtp(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { userLogin, requestOtp, verifyOtp };
+module.exports = { userLogin, requestOtp,  verifyOtp,
+  getGates
+};

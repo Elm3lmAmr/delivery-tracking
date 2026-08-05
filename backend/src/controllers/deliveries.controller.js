@@ -179,13 +179,12 @@ async function confirmExit(req, res, next) {
       if (rows.length === 0) throw new AppError('Delivery not found', 404);
       if (rows[0].status !== 'active') throw new AppError('Delivery not in active state', 400);
       
-      const enteredAt = rows[0].entered_at;
-      const now = new Date();
-      duration = Math.floor((now.getTime() - new Date(enteredAt).getTime()) / 1000);
+      const [durRows] = await conn.execute('SELECT TIMESTAMPDIFF(SECOND, entered_at, NOW()) AS dur FROM deliveries WHERE id = ?', [deliveryId]);
+      duration = durRows[0].dur || 0;
       
       await conn.execute(
-        `UPDATE deliveries SET status = 'completed', completed_at = NOW(), duration_seconds = ? WHERE id = ?`,
-        [duration, deliveryId]
+        `UPDATE deliveries SET status = 'completed', completed_at = NOW(), duration_seconds = ?, exit_gate_id = ?, exit_scanned_by = ? WHERE id = ?`,
+        [duration, gateId, req.auth.id, deliveryId]
       );
       
       await conn.execute(

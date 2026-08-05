@@ -100,6 +100,8 @@ CREATE TABLE `deliveries` (
   `unit_id` int(11) DEFAULT NULL,
   `unit_number_raw` varchar(40) DEFAULT NULL,
   `gate_id` int(11) DEFAULT NULL,
+  `exit_gate_id` int(11) DEFAULT NULL,
+  `exit_scanned_by` int(11) DEFAULT NULL,
   `status` enum('pending','active','completed','expired','rejected') DEFAULT 'pending',
   `qr_expires_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `entered_at` timestamp NULL DEFAULT NULL,

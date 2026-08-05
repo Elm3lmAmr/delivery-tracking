@@ -47,12 +47,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: kBg,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Text('EDARA',
               style: TextStyle(color: kAccent, fontSize: 48, fontWeight: FontWeight.w700, letterSpacing: 4),
             ),

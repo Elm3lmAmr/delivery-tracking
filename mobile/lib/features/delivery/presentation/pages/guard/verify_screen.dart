@@ -97,7 +97,7 @@ class _GuardVerifyScreenState extends State<GuardVerifyScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: kOk.withOpacity(0.15),
+                color: kOk.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Text('VERIFIED',

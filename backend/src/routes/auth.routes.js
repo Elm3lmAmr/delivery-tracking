@@ -29,6 +29,9 @@ const otpVerifyLimiter = rateLimit({
 // Backend users (admin/officer/guard) login
 router.post('/login', controller.userLogin);
 
+// Get list of gates for guard login screen
+router.get('/gates', controller.getGates);
+
 // Driver mobile auth (phone/OTP flow)
 router.post('/driver/otp/request', otpRequestLimiter, controller.requestOtp);
 router.post('/driver/otp/verify', otpVerifyLimiter, controller.verifyOtp);

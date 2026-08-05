@@ -6,6 +6,7 @@ import '../../../data/data_sources/delivery_remote_data_source.dart';
 import '../../../../../config/theme.dart';
 import 'package:intl/intl.dart';
 import '../../../data/repositories_impl/delivery_repository_impl.dart';
+import '../../../../../core/services/location_service.dart';
 
 import '../../../../../core/api/server_config_dialog.dart';
 
@@ -22,6 +23,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   List<dynamic> _history = [];
   Map<String, dynamic>? _activeDelivery;
   bool _isLoadingHistory = true;
+  LocationService? _locationService;
 
   @override
   void initState() {
@@ -37,11 +39,27 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       final repo = DeliveryRepositoryImpl(remoteDataSource: DeliveryRemoteDataSource(apiClient));
       final h = await repo.fetchDeliveryHistory();
       final a = await repo.fetchActiveDelivery();
-      if (mounted) setState(() { 
+      if (mounted) {
+        setState(() { 
         _history = h; 
         _activeDelivery = a;
         _isLoadingHistory = false; 
       });
+      }
+
+      if (_activeDelivery != null) {
+        if (_locationService == null) {
+          _locationService = LocationService(repo);
+          final granted = await _locationService!.requestPermission();
+          if (granted) {
+            _locationService!.startTracking(_activeDelivery!['deliveryId'] is int ? _activeDelivery!['deliveryId'] : int.parse(_activeDelivery!['deliveryId'].toString()));
+          }
+        } else {
+          _locationService!.startTracking(_activeDelivery!['deliveryId'] is int ? _activeDelivery!['deliveryId'] : int.parse(_activeDelivery!['deliveryId'].toString()));
+        }
+      } else {
+        _locationService?.stopTracking();
+      }
     } catch (e) {
       debugPrint('Error fetching history: $e');
       if (mounted) {
@@ -70,11 +88,17 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         await prefs.setString('plate_number', me['plate_number']);
       }
     } catch (e) {
-      // Ignore network errors on silent reload
+      debugPrint('Failed to load driver name from API: $e');
     }
   }
 
-  Future<void> _signOut() async {
+  @override
+  void dispose() {
+    _locationService?.stopTracking();
+    super.dispose();
+  }
+
+  Future<void> _logout() async {
     final apiClient = ApiClient();
     await apiClient.clearToken();
     if (mounted) {
@@ -122,7 +146,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             const Text('Driver Profile', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 48),
             ElevatedButton.icon(
-              onPressed: _signOut,
+              onPressed: _logout,
               icon: const Icon(Icons.logout),
               label: const Text('Sign Out'),
               style: ElevatedButton.styleFrom(
@@ -156,7 +180,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     ),
                   ],
                 ),
-                CircleAvatar(radius: 22, backgroundColor: kSurface2, child: const Icon(Icons.person, color: kMuted)),
+                const CircleAvatar(radius: 22, backgroundColor: kSurface2, child: Icon(Icons.person, color: kMuted)),
               ],
             ),
             const SizedBox(height: 24),
@@ -171,9 +195,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   gradient: const LinearGradient(colors: [kAccent, Color(0xFF2A5FA0)]),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,11 +227,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     'unit': _activeDelivery!['unit'],
                     'deliveryId': _activeDelivery!['deliveryId'],
                   });
+                  _loadHistory(); // refresh after returning
                 },
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: kWarn.withOpacity(0.15),
+                    color: kWarn.withValues(alpha: 0.15),
                     border: Border.all(color: kWarn),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -248,7 +273,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 durationSeconds: h['durationSeconds'],
                 dateStr: h['date'],
                 status: h['status'] ?? 'completed'
-              )).toList(),
+              )),
           ],
         ),
       );

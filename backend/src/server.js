@@ -54,12 +54,17 @@ app.use('/api/v1', routes);
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(errorHandler);
 
+const { startOverstayCron } = require('./services/overstay.service');
+
 // ---------- Socket.IO for live tracking ----------
 const io = new SocketIOServer(server, {
   cors: { origin: process.env.CORS_ORIGIN || '*', credentials: true }
 });
 setupSockets(io);
 app.set('io', io);
+
+// Start background cron jobs
+startOverstayCron(io);
 
 // ---------- Boot ----------
 const PORT = parseInt(process.env.PORT, 10) || 4000;

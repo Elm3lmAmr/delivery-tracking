@@ -142,9 +142,9 @@ class _GuardScannerScreenState extends State<GuardScannerScreen> {
               ),
             ),
           ),
-          Positioned(
+          const Positioned(
             left: 0, right: 0, bottom: 24,
-            child: const Text('Align QR inside the frame',
+            child: Text('Align QR inside the frame',
               style: TextStyle(color: Colors.white70, fontSize: 12),
               textAlign: TextAlign.center,
             ),
@@ -152,7 +152,7 @@ class _GuardScannerScreenState extends State<GuardScannerScreen> {
           Positioned(
             left: 20, right: 20, bottom: 60,
             child: ElevatedButton(
-              onPressed: () => _onDetect(BarcodeCapture(barcodes: [Barcode(rawValue: 'EDARA|v1|TEST_SIMULATED_TOKEN')])),
+              onPressed: () => _onDetect(const BarcodeCapture(barcodes: [Barcode(rawValue: 'EDARA|v1|TEST_SIMULATED_TOKEN')])),
               style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
               child: const Text('Simulate scan'),
             ),

@@ -17,6 +17,39 @@ class _GuardLoginScreenState extends State<GuardLoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  
+  List<dynamic> _gates = [];
+  int? _selectedGateId;
+  bool _isLoadingGates = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGates();
+  }
+
+  Future<void> _fetchGates() async {
+    try {
+      final apiClient = ApiClient();
+      final res = await apiClient.dio.get('/auth/gates');
+      if (mounted) {
+        setState(() {
+          _gates = res.data;
+          if (_gates.isNotEmpty) {
+            _selectedGateId = _gates[0]['id'];
+          }
+          _isLoadingGates = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingGates = false;
+          _errorMessage = 'Failed to load gates. Using assigned gate.';
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -41,10 +74,17 @@ class _GuardLoginScreenState extends State<GuardLoginScreen> {
 
     try {
       final apiClient = ApiClient();
-      final res = await apiClient.dio.post('/auth/login', data: {
+      
+      final Map<String, dynamic> data = {
         'email': email,
         'password': password,
-      });
+      };
+      
+      if (_selectedGateId != null) {
+        data['gateId'] = _selectedGateId;
+      }
+
+      final res = await apiClient.dio.post('/auth/login', data: data);
 
       await apiClient.saveToken(res.data['token']);
       if (mounted) {
@@ -109,6 +149,27 @@ class _GuardLoginScreenState extends State<GuardLoginScreen> {
                   prefixIcon: Icon(Icons.lock),
                 ),
               ),
+              const SizedBox(height: 16),
+              if (_isLoadingGates)
+                const Center(child: CircularProgressIndicator())
+              else if (_gates.isNotEmpty)
+                DropdownButtonFormField<int>(
+                  decoration: const InputDecoration(
+                    labelText: 'Select Gate (Shift)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.door_sliding),
+                  ),
+                  initialValue: _selectedGateId,
+                  items: _gates.map((g) {
+                    return DropdownMenuItem<int>(
+                      value: g['id'],
+                      child: Text(g['name']),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    setState(() => _selectedGateId = val);
+                  },
+                ),
               const SizedBox(height: 24),
               if (_errorMessage != null)
                 Padding(
