@@ -269,4 +269,35 @@ async function postPing(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { createDelivery, lookupByToken, confirmEntry, rejectEntry, postPing, confirmExit, getDriverHistory };
+// ---------- Driver fetches active delivery ----------
+async function getActiveDelivery(req, res, next) {
+  try {
+    const driverId = req.auth.id;
+    const rows = await query(
+      `SELECT d.id, d.status, d.qr_token, d.unit_number_raw,
+              p.name_en AS project_name, u.unit_number
+       FROM deliveries d
+       JOIN projects p ON p.id = d.project_id
+       LEFT JOIN units u ON u.id = d.unit_id
+       WHERE d.driver_id = ? AND d.status IN ('pending', 'active')
+       ORDER BY d.created_at DESC LIMIT 1`,
+      [driverId]
+    );
+
+    if (rows.length === 0) {
+      return res.json(null);
+    }
+    
+    const r = rows[0];
+    res.json({
+      deliveryId: r.id,
+      status: r.status,
+      qrToken: r.qr_token,
+      qrPayload: qrService.buildPayload(r.qr_token),
+      project: r.project_name,
+      unit: r.unit_number || r.unit_number_raw
+    });
+  } catch (err) { next(err); }
+}
+
+module.exports = { createDelivery, lookupByToken, confirmEntry, rejectEntry, postPing, confirmExit, getDriverHistory, getActiveDelivery };

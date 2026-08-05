@@ -84,7 +84,12 @@ class _GuardScannerScreenState extends State<GuardScannerScreen> {
       body: (_selectedIndex == 0 || _selectedIndex == 1) ? _buildScannerTab() : _buildProfileTab(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: (index) {
+          if (index == 0 || index == 1) {
+            _handled = false; // reset scanner state when switching tabs
+          }
+          setState(() => _selectedIndex = index);
+        },
         backgroundColor: kSurface,
         selectedItemColor: kAccent,
         unselectedItemColor: kMuted,

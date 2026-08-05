@@ -21,4 +21,5 @@ abstract class DeliveryRepository {
   Future<void> rejectEntry(int deliveryId, String reason);
   Future<void> confirmExit(int deliveryId);
   Future<List<dynamic>> fetchDeliveryHistory();
+  Future<Map<String, dynamic>?> fetchActiveDelivery();
 }

@@ -63,4 +63,9 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
   Future<List<dynamic>> fetchDeliveryHistory() async {
     return await remoteDataSource.fetchDeliveryHistory();
   }
+
+  @override
+  Future<Map<String, dynamic>?> fetchActiveDelivery() async {
+    return await remoteDataSource.fetchActiveDelivery();
+  }
 }

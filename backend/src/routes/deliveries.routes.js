@@ -26,4 +26,7 @@ router.post('/:id/confirm-exit', verifyToken, requireRole('guard'), controller.c
 // Driver fetches history
 router.get('/history', verifyToken, requireDriver, controller.getDriverHistory);
 
+// Driver fetches active delivery
+router.get('/active', verifyToken, requireDriver, controller.getActiveDelivery);
+
 module.exports = router;

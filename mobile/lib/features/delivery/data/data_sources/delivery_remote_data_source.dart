@@ -68,4 +68,9 @@ class DeliveryRemoteDataSource {
     final res = await client.dio.get('/deliveries/history');
     return res.data;
   }
+
+  Future<Map<String, dynamic>?> fetchActiveDelivery() async {
+    final res = await client.dio.get('/deliveries/active');
+    return res.data;
+  }
 }

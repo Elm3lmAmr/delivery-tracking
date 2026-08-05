@@ -20,6 +20,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   int _selectedIndex = 0;
   String _driverName = 'Driver';
   List<dynamic> _history = [];
+  Map<String, dynamic>? _activeDelivery;
   bool _isLoadingHistory = true;
 
   @override
@@ -35,7 +36,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       await apiClient.loadToken();
       final repo = DeliveryRepositoryImpl(remoteDataSource: DeliveryRemoteDataSource(apiClient));
       final h = await repo.fetchDeliveryHistory();
-      if (mounted) setState(() { _history = h; _isLoadingHistory = false; });
+      final a = await repo.fetchActiveDelivery();
+      if (mounted) setState(() { 
+        _history = h; 
+        _activeDelivery = a;
+        _isLoadingHistory = false; 
+      });
     } catch (e) {
       debugPrint('Error fetching history: $e');
       if (mounted) {
@@ -184,7 +190,46 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+            if (_activeDelivery != null) ...[
+              GestureDetector(
+                onTap: () {
+                  context.push('/driver/new/qr', extra: {
+                    'qrPayload': _activeDelivery!['qrPayload'],
+                    'project': _activeDelivery!['project'],
+                    'unit': _activeDelivery!['unit'],
+                    'deliveryId': _activeDelivery!['deliveryId'],
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: kWarn.withOpacity(0.15),
+                    border: Border.all(color: kWarn),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.qr_code, color: kWarn, size: 32),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_activeDelivery!['status'] == 'active' ? 'Active Delivery' : 'Pending Entry',
+                              style: const TextStyle(color: kWarn, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const Text('Tap to show your QR code', style: TextStyle(color: kText, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: kWarn),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             const Text('RECENT DELIVERIES',
               style: TextStyle(color: kMuted, fontSize: 11, letterSpacing: 1.4, fontWeight: FontWeight.w600),
             ),
