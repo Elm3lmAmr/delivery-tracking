@@ -62,12 +62,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       await apiClient.loadToken();
       final ds = DeliveryRemoteDataSource(apiClient);
       final me = await ds.getMe();
-      if (me['fullName'] != null && me['fullName'].toString().isNotEmpty) {
-        await prefs.setString('driver_name', me['fullName']);
-        if (mounted) setState(() => _driverName = me['fullName']);
+      if (me['full_name'] != null && me['full_name'].toString().isNotEmpty) {
+        await prefs.setString('driver_name', me['full_name']);
+        if (mounted) setState(() => _driverName = me['full_name']);
       }
-      if (me['plateNumber'] != null) {
-        await prefs.setString('plate_number', me['plateNumber']);
+      if (me['plate_number'] != null) {
+        await prefs.setString('plate_number', me['plate_number']);
       }
     } catch (e) {
       // Ignore network errors on silent reload
