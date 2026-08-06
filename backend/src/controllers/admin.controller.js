@@ -42,7 +42,7 @@ async function getLiveDeliveries(req, res, next) {
       params.push(s, s, s);
     }
     const rows = await query(
-      `SELECT d.id, d.entered_at,
+      `SELECT d.id, d.entered_at, d.is_offline, d.idle_stage, d.idle_since,
               dr.full_name AS driver, dr.phone, dr.plate_number,
               p.name_en AS project, COALESCE(u.unit_number, d.unit_number_raw) AS unit,
               g.name AS gate,

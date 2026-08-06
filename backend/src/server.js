@@ -55,6 +55,8 @@ app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(errorHandler);
 
 const { startOverstayCron } = require('./services/overstay.service');
+const { startConnectionMonitor } = require('./services/connection.service');
+const { startIdleMonitor } = require('./services/idle.service');
 
 // ---------- Socket.IO for live tracking ----------
 const io = new SocketIOServer(server, {
@@ -65,6 +67,8 @@ app.set('io', io);
 
 // Start background cron jobs
 startOverstayCron(io);
+startConnectionMonitor(io);
+startIdleMonitor(io);
 
 // ---------- Boot ----------
 const PORT = parseInt(process.env.PORT, 10) || 4000;

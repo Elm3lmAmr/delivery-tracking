@@ -42,7 +42,23 @@ export default function LiveView({ search }) {
     },
     'delivery:ping': (data) => {
       setDeliveries(prev => prev.map(d => 
-        d.id === data.deliveryId ? { ...d, lat: data.lat, lng: data.lng } : d
+        d.id === data.deliveryId ? { ...d, lat: data.lat, lng: data.lng, is_offline: 0 } : d
+      ));
+    },
+    'delivery:offline': (data) => {
+      setDeliveries(prev => prev.map(d => 
+        d.id === data.deliveryId ? { ...d, is_offline: 1 } : d
+      ));
+    },
+    'delivery:online': (data) => {
+      setDeliveries(prev => prev.map(d => 
+        d.id === data.deliveryId ? { ...d, is_offline: 0 } : d
+      ));
+      loadData();
+    },
+    'delivery:idle': (data) => {
+      setDeliveries(prev => prev.map(d => 
+        d.id === data.deliveryId ? { ...d, idle_stage: data.idleStage, idle_since: data.idleStage === 0 ? null : (d.idle_since || new Date().toISOString()) } : d
       ));
     }
   });
@@ -57,6 +73,13 @@ export default function LiveView({ search }) {
         <div className="kpi"><div className="kpi-label">Zone incursions</div><div className="kpi-value" style={{ color: 'var(--warn)' }}>{kpis.zoneIncursions}</div></div>
         <div className="kpi"><div className="kpi-label">Overstay alerts</div><div className="kpi-value" style={{ color: 'var(--crit)' }}>{kpis.overstayAlerts}</div></div>
       </div>
+      
+      {deliveries.some(d => d.idle_stage === 3 && !d.is_offline) && (
+        <div style={{ backgroundColor: 'var(--crit)', color: 'white', padding: '16px', margin: '0 0 16px 0', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '18px', animation: 'pulse 2s infinite' }}>
+          ⚠️ CRITICAL ALERT: One or more drivers have been stationary for over 10 minutes! Please dispatch security immediately.
+        </div>
+      )}
+
       <div style={{ height: '400px', marginBottom: '1px', background: 'var(--border)' }}>
         <LiveMap deliveries={deliveries} selectedDeliveryId={selectedDeliveryId} />
       </div>
@@ -78,7 +101,13 @@ export default function LiveView({ search }) {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 600 }}>{d.driver}</span>
+                  <span style={{ fontWeight: 600 }}>
+                    {d.driver} 
+                    {d.is_offline ? <span style={{ marginLeft: 8, fontSize: 10, backgroundColor: 'var(--crit)', padding: '2px 6px', borderRadius: 4, color: '#fff' }}>Offline</span> : null}
+                    {d.idle_stage === 1 && !d.is_offline ? <span style={{ marginLeft: 8, fontSize: 10, backgroundColor: 'var(--warn)', padding: '2px 6px', borderRadius: 4, color: '#000' }}>Idle (2m)</span> : null}
+                    {d.idle_stage === 2 && !d.is_offline ? <span style={{ marginLeft: 8, fontSize: 10, backgroundColor: 'orange', padding: '2px 6px', borderRadius: 4, color: '#fff' }}>Idle (7m)</span> : null}
+                    {d.idle_stage === 3 && !d.is_offline ? <span style={{ marginLeft: 8, fontSize: 10, backgroundColor: 'var(--crit)', padding: '2px 6px', borderRadius: 4, color: '#fff' }}>Idle (10m+)</span> : null}
+                  </span>
                   <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--muted)' }}>{Math.round(d.elapsed_seconds / 60)}m</span>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>

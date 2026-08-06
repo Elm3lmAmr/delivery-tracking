@@ -239,7 +239,7 @@ async function postPing(req, res, next) {
     }
     // Verify delivery belongs to this driver and is active
     const rows = await query(
-      'SELECT id, project_id, status FROM deliveries WHERE id = ? AND driver_id = ?',
+      'SELECT id, project_id, status, is_offline FROM deliveries WHERE id = ? AND driver_id = ?',
       [deliveryId, req.auth.id]
     );
     if (rows.length === 0) throw new AppError('Delivery not found', 404);
@@ -251,6 +251,16 @@ async function postPing(req, res, next) {
       'INSERT INTO location_pings (delivery_id, lat, lng, accuracy_m, speed_kmh) VALUES (?, ?, ?, ?, ?)',
       [deliveryId, lat, lng, accuracy_m || null, speed_kmh || null]
     );
+
+    // If driver was offline, they are back online
+    if (rows[0].is_offline) {
+      await query('UPDATE deliveries SET is_offline = 0 WHERE id = ?', [deliveryId]);
+      await query('UPDATE alerts SET resolved_at = NOW() WHERE delivery_id = ? AND alert_type = "no_gps" AND resolved_at IS NULL', [deliveryId]);
+      const io = req.app.get('io');
+      if (io) {
+        io.to('admin').emit('delivery:online', { deliveryId, isOffline: false });
+      }
+    }
 
     // Check geofence
     const alerts = await geofenceService.checkPing({

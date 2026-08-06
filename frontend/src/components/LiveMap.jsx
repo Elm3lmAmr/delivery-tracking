@@ -18,6 +18,14 @@ const truckIcon = new L.Icon({
   popupAnchor: [0, -32],
 });
 
+const truckIconOffline = new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/2766/2766156.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
+  className: 'offline-truck-icon'
+});
+
 // A component to automatically fit bounds if needed or pan to a selected delivery
 function MapBounds({ deliveries, selectedDeliveryId }) {
   const map = useMap();
@@ -64,7 +72,7 @@ export default function LiveMap({ deliveries, selectedDeliveryId }) {
           <Marker 
             key={d.id} 
             position={[d.lat, d.lng]} 
-            icon={truckIcon}
+            icon={d.is_offline ? truckIconOffline : truckIcon}
             ref={(ref) => {
               if (ref) markerRefs.current[d.id] = ref;
             }}
